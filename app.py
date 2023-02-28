@@ -8,6 +8,28 @@ cors = CORS(app, resources={r"/average/*": {"origins": "*"}})
 cors = CORS(app, resources={r"/getrev/*": {"origins": "*"}})
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
+@app.route('/reviews/<int:id>', methods=['PUT'])
+def update_review(id):
+    # get the data from the request body
+    data = request.get_json()
+    # create a connection to the database
+    conn = sqlite3.connect('reviews.sqlite')
+    # execute the update query
+    cursor = conn.cursor()
+    cursor.execute('UPDATE reviews SET name=?, rate=?, review=? WHERE id=?', (data['name'], data['rate'], data['review'], id))
+    conn.commit()
+    # check if the query affected any rows
+    if cursor.rowcount == 0:
+        return {'message': 'Review not found.'}, 404
+    # close the cursor and connection objects
+    cursor.close()
+    conn.close()
+    return {'message': 'Review updated successfully.'}
+
+
+
+
+
 def db_connection():
     conn = None
     try:
@@ -90,8 +112,26 @@ def average_rate():
         else:
             return "Something wrong", 404
 
+@app.route('/rateslist', methods=['GET'])
+def index():
+    if request.method == "GET":
+        conn = sqlite3.connect('reviews.sqlite')
+# Create a cursor object
+        cursor = conn.cursor()
+# Execute a SELECT statement to retrieve data from a specific column
+        cursor.execute('SELECT rate FROM reviews')
+# Fetch all the rows and store the data in a list
+        column_data = [row[0] for row in cursor.fetchall()]
+# Close the cursor and connection objects
+        cursor.close()
+        conn.close()
+# Print the data stored in the list
+        return column_data
 
-    
+
+
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
